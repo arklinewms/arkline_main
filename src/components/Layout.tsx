@@ -187,10 +187,10 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
         <div className="h-14 flex items-center justify-between px-4 bg-slate-950/50 border-b border-slate-800">
           {sidebarOpen && (
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-                <Package className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 flex items-center justify-center">
+                <img src="/arkline.jpg" alt="ARKLINE" className="w-10 h-10 object-contain" />
               </div>
-              <span className="font-bold text-lg text-white tracking-tight">Canis AI</span>
+              <span className="font-bold text-lg text-white tracking-tight">ARKLINE WMS</span>
             </div>
           )}
           <button
@@ -264,7 +264,7 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
             {sidebarOpen && (
               <div className="overflow-hidden">
                 <p className="text-sm font-medium text-slate-200 truncate">Admin User</p>
-                <p className="text-xs text-slate-500 truncate">admin@canis.ai</p>
+                <p className="text-xs text-slate-500 truncate">admin@arkline.com</p>
               </div>
             )}
           </div>

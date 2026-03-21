@@ -13,7 +13,7 @@ export default function Chatbot() {
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
-            text: 'Hello! I am your Canis AI assistant. How can I help you today?',
+            text: 'Hello! I am your ARKLINE assistant. How can I help you today?',
             sender: 'bot',
             timestamp: new Date()
         }
@@ -95,8 +95,8 @@ export default function Chatbot() {
                 {/* Header */}
                 <div className="h-14 bg-slate-900 text-white rounded-t-lg flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center space-x-2">
-                        <Bot className="w-5 h-5 text-blue-400" />
-                        <span className="font-semibold">Canis Assistant</span>
+                        <img src="/arkline.jpg" alt="Arkline Bot" className="w-7 h-7 rounded-full object-contain flex-shrink-0" />
+ARKLINE 
                     </div>
                     <button
                         onClick={() => setIsOpen(false)}
