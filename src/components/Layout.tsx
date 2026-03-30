@@ -41,15 +41,20 @@ import {
   Target,
   Search,
   Bell,
-  HelpCircle
+  HelpCircle,
+  LogOut
 } from 'lucide-react';
+
 import Chatbot from './Chatbot';
 
 interface LayoutProps {
   children: React.ReactNode;
   currentPage: string;
   onNavigate: (page: string) => void;
+  onLogout: () => void;
 }
+
+
 
 interface MenuItem {
   id: string;
@@ -59,9 +64,10 @@ interface MenuItem {
   subItems?: MenuItem[];
 }
 
-export default function Layout({ children, currentPage, onNavigate }: LayoutProps) {
+export default function Layout({ children, currentPage, onNavigate, onLogout }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['inbound']);
+
 
   const toggleMenu = (menuId: string) => {
     setExpandedMenus(prev =>
@@ -257,18 +263,30 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
         </nav>
 
         <div className="p-4 bg-slate-950/30 border-t border-slate-800">
-          <div className={`${sidebarOpen ? 'flex items-center space-x-3' : 'flex justify-center'}`}>
-            <div className="w-8 h-8 bg-blue-900 rounded-md flex items-center justify-center text-blue-100 font-bold border border-blue-700 text-xs">
-              AD
+          <div className="flex items-center justify-between">
+            <div className={`${sidebarOpen ? 'flex items-center space-x-3 cursor-pointer hover:bg-red-900/30 p-1 rounded transition-colors' : 'flex justify-center'}`} onClick={sidebarOpen ? onLogout : undefined}>
+              <div className="w-8 h-8 bg-blue-900 rounded-md flex items-center justify-center text-blue-100 font-bold border border-blue-700 text-xs hover:bg-red-900 hover:border-red-500 transition-colors">
+                AD
+              </div>
+              {sidebarOpen && (
+                <div className="min-w-0 overflow-hidden">
+                  <p className="text-sm font-medium text-slate-200 truncate">Admin User</p>
+                  <p className="text-xs text-slate-500 truncate">admin@arkline.com</p>
+                </div>
+              )}
             </div>
             {sidebarOpen && (
-              <div className="overflow-hidden">
-                <p className="text-sm font-medium text-slate-200 truncate">Admin User</p>
-                <p className="text-xs text-slate-500 truncate">admin@arkline.com</p>
-              </div>
+              <button 
+                onClick={onLogout}
+                className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/50 rounded-lg transition-all duration-200 group"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5 group-hover:scale-110" />
+              </button>
             )}
           </div>
         </div>
+
       </aside>
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">

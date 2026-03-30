@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import Home from './components/Home';
 import Inventory from './components/Inventory';
@@ -8,9 +8,46 @@ import Outbound from './components/Outbound';
 import Storage from './components/Storage';
 import Transfers from './components/Transfers';
 import Reports from './components/Reports';
+import Login from './components/Login';
+import { AuthToken } from './types/auth';
+
+
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    const tokenStr = localStorage.getItem('authToken');
+    if (tokenStr) {
+      try {
+        const token: AuthToken = JSON.parse(tokenStr);
+        if (token.expiresAt > Date.now()) {
+          setIsAuthenticated(true);
+        } else {
+          localStorage.removeItem('authToken');
+        }
+      } catch {
+        localStorage.removeItem('authToken');
+      }
+    }
+    setIsChecking(false);
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem('authToken');
+    setIsAuthenticated(false);
+    setCurrentPage('home');
+  };
+
+  if (isChecking) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="text-xl font-semibold text-gray-600">Loading...</div></div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Login />;
+  }
 
   const renderPage = () => {
     // Handle sub-routes for Inbound
@@ -53,6 +90,7 @@ function App() {
       case 'feature3': // Fallback
         return <Outbound activeTab="picking" />;
     }
+
 
     // Check for outbound sub-routes
     if (currentPage.startsWith('outbound')) {
@@ -98,10 +136,12 @@ function App() {
   };
 
   return (
-    <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
+    <Layout currentPage={currentPage} onNavigate={setCurrentPage} onLogout={logout}>
       {renderPage()}
     </Layout>
   );
 }
+
+
 
 export default App;

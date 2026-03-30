@@ -21,3 +21,17 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Specific backend folder (optional stricter rule)
+backend/__pycache__/
+backend/*.pyc
+ 
+ *.md
+ 
