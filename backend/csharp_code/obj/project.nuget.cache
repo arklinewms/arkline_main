@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "63iNyYZimvE=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\user\\Desktop\\arkline_main\\backend\\csharp_code\\WarehouseApi.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\user\\.nuget\\packages\\dapper\\2.1.72\\dapper.2.1.72.nupkg.sha512",
+    "C:\\Users\\user\\.nuget\\packages\\npgsql\\8.0.3\\npgsql.8.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

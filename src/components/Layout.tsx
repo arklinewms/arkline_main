@@ -86,7 +86,6 @@ export default function Layout({ children, currentPage, onNavigate, onLogout }: 
       subItems: [
         { id: 'inventory_all', name: 'All Products', icon: Package },
         { id: 'inventory_add', name: 'Add Product', icon: Plus },
-        { id: 'inventory_onhand', name: 'Stock on hand', icon: ClipboardList },
         { id: 'inventory_availability', name: 'Available vs Reserved', icon: PieChart },
         { id: 'inventory_locations', name: 'Bin / Location', icon: MapPin },
         { id: 'inventory_master', name: 'SKU Master', icon: Database },

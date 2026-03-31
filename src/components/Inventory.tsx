@@ -33,6 +33,7 @@ interface InventoryProps {
 
 export default function Inventory({ view = 'all' }: InventoryProps) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchField, setSearchField] = useState('all');
     const [items, setItems] = useState<WarehouseData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -49,7 +50,8 @@ export default function Inventory({ view = 'all' }: InventoryProps) {
             setIsLoading(true);
             setError(null);
             try {
-                const response = await fetch('http://localhost:5000/api/inventory');
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                const response = await fetch(`${API_URL}/api/inventory`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch inventory data');
                 }
@@ -80,7 +82,7 @@ export default function Inventory({ view = 'all' }: InventoryProps) {
     };
 
     // If view is NOT the main list, show a placeholder for now
-    if (view !== 'all' && view !== 'onhand' && view !== 'add') {
+    if (view !== 'all' && view !== 'add') {
         const titles: Record<string, string> = {
             availability: 'Available vs Reserved Stock',
             locations: 'Bin / Location Management',
@@ -116,47 +118,14 @@ export default function Inventory({ view = 'all' }: InventoryProps) {
         { title: 'Active Vendors', value: '45', icon: Truck, color: 'bg-indigo-600' },
     ];
 
-    if (view === 'onhand') {
-        const canceledItems = items.filter(i => i.status === 'Canceled');
-        const pendingItems = items.filter(i => i.status === 'Pending');
-
-        stats = [
-            {
-                title: 'Total Canceled Items',
-                value: canceledItems.length.toString(),
-                icon: AlertCircle,
-                color: 'bg-red-600'
-            },
-            {
-                title: 'Canceled Quantity',
-                value: canceledItems.reduce((acc, curr) => acc + curr.totalitemquantity, 0).toLocaleString(),
-                icon: AlertTriangle,
-                color: 'bg-orange-600'
-            },
-            {
-                title: 'Total Pending Items',
-                value: pendingItems.length.toString(),
-                icon: RefreshCw,
-                color: 'bg-amber-600'
-            },
-            {
-                title: 'Pending Quantity',
-                value: pendingItems.reduce((acc, curr) => acc + curr.totalitemquantity, 0).toLocaleString(),
-                icon: Package,
-                color: 'bg-yellow-600'
-            },
-        ];
-    }
-
     const filteredItems = items.filter(item => {
-        const matchesSearch = (item.productname || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.materialsku || '').toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesProduct = (item.productname || '').toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSku = (item.materialsku || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-        if (view === 'onhand') {
-            return matchesSearch && (item.status === 'Canceled' || item.status === 'Pending');
-        }
+        if (searchField === 'product') return matchesProduct;
+        if (searchField === 'sku') return matchesSku;
 
-        return matchesSearch;
+        return matchesProduct || matchesSku;
     });
 
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
@@ -221,7 +190,8 @@ export default function Inventory({ view = 'all' }: InventoryProps) {
         if (!window.confirm('Are you sure you want to delete this product?')) return;
 
         try {
-            const response = await fetch(`http://localhost:5000/api/inventory/${id}`, {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const response = await fetch(`${API_URL}/api/inventory/${id}`, {
                 method: 'DELETE',
             });
 
@@ -264,7 +234,8 @@ export default function Inventory({ view = 'all' }: InventoryProps) {
         }
 
         try {
-            const response = await fetch(`http://localhost:5000/api/inventory/${editingItem.id}`, {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const response = await fetch(`${API_URL}/api/inventory/${editingItem.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(editingItem)
@@ -365,7 +336,7 @@ export default function Inventory({ view = 'all' }: InventoryProps) {
                         <div className="space-y-1">
                             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Inventory Management</h1>
                             <p className="text-slate-500 text-sm">
-                                {view === 'onhand' ? 'Showing filtered view: Canceled and Pending items only.' : 'Manage your stock, track levels, and organize products.'}
+                                Manage your stock, track levels, and organize products.
                             </p>
                         </div>
                     </div>
@@ -402,10 +373,21 @@ export default function Inventory({ view = 'all' }: InventoryProps) {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <button className="flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 bg-white rounded border border-slate-300 hover:bg-slate-50 transition-colors">
-                                <Filter className="w-4 h-4 mr-2" />
-                                Filters
-                            </button>
+                            <div className="relative min-w-[200px]">
+                                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                <select
+                                    className="w-full pl-9 pr-8 py-1.5 text-sm font-medium text-slate-700 bg-white rounded border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer hover:bg-slate-50 relative z-10"
+                                    value={searchField}
+                                    onChange={(e) => setSearchField(e.target.value)}
+                                >
+                                    <option value="all">Filter: All Fields</option>
+                                    <option value="sku">Filter: SKU Only</option>
+                                    <option value="product">Filter: Product Name</option>
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-400 z-20">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-2">

@@ -68,8 +68,6 @@ function App() {
       case 'inventory':
       case 'inventory_all':
         return <Inventory view="all" />;
-      case 'inventory_onhand':
-        return <Inventory view="onhand" />;
       case 'inventory_availability':
         return <Inventory view="availability" />;
       case 'inventory_locations':
