@@ -46,10 +46,13 @@ export default function Chatbot() {
         setIsLoading(true);
 
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const API_URL = import.meta.env.VITE_API_URL;
             const response = await fetch(`${API_URL}/api/chat`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
                 body: JSON.stringify({ message: userMessage.text })
             });
 
@@ -97,7 +100,7 @@ export default function Chatbot() {
                 <div className="h-14 bg-slate-900 text-white rounded-t-lg flex items-center justify-between px-4 shrink-0">
                     <div className="flex items-center space-x-2">
                         <img src="/arkline.jpg" alt="Arkline Bot" className="w-7 h-7 rounded-full object-contain flex-shrink-0" />
-ARKLINE 
+                        ARKLINE
                     </div>
                     <button
                         onClick={() => setIsOpen(false)}
@@ -116,8 +119,8 @@ ARKLINE
                         >
                             <div
                                 className={`max-w-[85%] rounded-lg px-4 py-2.5 text-sm shadow-sm leading-relaxed ${msg.sender === 'user'
-                                        ? 'bg-blue-600 text-white rounded-br-none'
-                                        : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none'
+                                    ? 'bg-blue-600 text-white rounded-br-none'
+                                    : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none'
                                     }`}
                             >
                                 {msg.text}

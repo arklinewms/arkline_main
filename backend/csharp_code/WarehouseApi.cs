@@ -29,11 +29,29 @@ var connectionString =
     $"Password={Env("DB_PASS")};";
 
 // ── App setup ─────────────────────────────────────────────────
+// var builder = WebApplication.CreateBuilder(args);
+// builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader());
+});
+
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy("AllowLocal", policy =>
+//         policy.WithOrigins("http://localhost:5173") // your frontend
+//               .AllowAnyHeader()
+//               .AllowAnyMethod());
+// });
 
 var app = builder.Build();
-app.UseCors();
+app.UseCors("AllowFrontend");
 
 // ── Endpoint 1: Total Inventory ───────────────────────────────
 // All records that are NOT Shipped (still in warehouse)

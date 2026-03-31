@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Package, TrendingUp, Users, AlertCircle, Activity } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -9,12 +9,20 @@ export default function Home() {
   const [inventoryData, setInventoryData] = useState<any[]>([]);
   const [totalInventory, setTotalInventory] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
+  const [selectedYear, setSelectedYear] = useState<string>('All');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        const response = await fetch(`${API_URL}/api/inventory`);
+        const API_URL = import.meta.env.VITE_API_URL;
+
+        const response = await fetch(`${API_URL}/api/inventory`, {
+          method: 'GET',
+          headers: {
+            'ngrok-skip-browser-warning': 'true'
+          }
+        });
+
         if (response.ok) {
           const data = await response.json();
           setInventoryData(data || []);
@@ -27,11 +35,14 @@ export default function Home() {
           });
           setTotalInventory(totalQty);
           setLowStockCount(lowStock);
+        } else {
+          console.error('Server responded with an error:', response.status);
         }
       } catch (err) {
         console.error('Failed to fetch home data', err);
       }
     };
+
     fetchData();
   }, []);
 
@@ -74,53 +85,97 @@ export default function Home() {
     { id: 5, action: 'Maintenance routine D', location: 'Storage Wing', time: '2 hours ago', status: 'success' }
   ];
 
-  // Process data for charts
-  const categoryMap: Record<string, number> = {};
-  inventoryData.forEach(item => {
-    const cat = item.categoryname || 'Uncategorized';
-    categoryMap[cat] = (categoryMap[cat] || 0) + (item.totalitemquantity || 0);
-  });
-  const pieData = Object.keys(categoryMap).map(key => ({ name: key, value: categoryMap[key] }));
-  const pieColors = ['#6366f1', '#3b82f6', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6'];
+  // Memoize available years extraction and optimize date parsing
+  const availableYears = useMemo(() => {
+    const yearsSet = new Set<string>();
+    inventoryData.forEach(item => {
+      if (item.mfgdate && item.mfgdate.length >= 4) yearsSet.add(item.mfgdate.substring(0, 4));
+      if (item.expdate && item.expdate.length >= 4) yearsSet.add(item.expdate.substring(0, 4));
+    });
+    return Array.from(yearsSet).sort();
+  }, [inventoryData]);
 
-  const barData = [...inventoryData]
-    .sort((a, b) => (b.totalitemquantity || 0) - (a.totalitemquantity || 0))
-    .slice(0, 5)
-    .map(item => ({ name: item.productname?.substring(0, 15) || 'Unknown', Quantity: item.totalitemquantity || 0 }));
+  // Memoize filtered chart data
+  const chartData = useMemo(() => {
+    if (selectedYear === 'All') return inventoryData;
+    return inventoryData.filter(item => {
+      const mfgYear = item.mfgdate ? item.mfgdate.substring(0, 4) : null;
+      const expYear = item.expdate ? item.expdate.substring(0, 4) : null;
+      return mfgYear === selectedYear || expYear === selectedYear;
+    });
+  }, [inventoryData, selectedYear]);
 
-  // Group by Expiry Date Month
-  const timelineMap: Record<string, number> = {};
-  inventoryData.forEach(item => {
-    if (item.expdate) {
-      const date = new Date(item.expdate);
-      // Format as Month Year (e.g., "Jan 2024") manually to handle cross-browser consistency easily
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthYear = `${months[date.getMonth()]} ${date.getFullYear()}`;
-      timelineMap[monthYear] = (timelineMap[monthYear] || 0) + (item.totalitemquantity || 0);
-    }
-  });
+  // Memoize all chart processing to prevent unneeded heavy loops on render
+  const { pieData, barData, lineData } = useMemo(() => {
+    const categoryMap: Record<string, number> = {};
+    chartData.forEach(item => {
+      const cat = item.categoryname || 'Uncategorized';
+      categoryMap[cat] = (categoryMap[cat] || 0) + (item.totalitemquantity || 0);
+    });
+    const computedPieData = Object.keys(categoryMap).map(key => ({ name: key, value: categoryMap[key] }));
 
-  // Create line data
-  const lineData = Object.keys(timelineMap)
-    .map(key => {
-      const [m, y] = key.split(' ');
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return {
-        name: key,
-        Quantity: timelineMap[key],
-        timestamp: new Date(parseInt(y), months.indexOf(m), 1).getTime()
-      };
-    })
-    .sort((a, b) => a.timestamp - b.timestamp)
-    .map(data => ({ name: data.name, Quantity: data.Quantity }));
+    const computedBarData = [...chartData]
+      .sort((a, b) => (b.totalitemquantity || 0) - (a.totalitemquantity || 0))
+      .slice(0, 5)
+      .map(item => ({ name: item.productname?.substring(0, 15) || 'Unknown', Quantity: item.totalitemquantity || 0 }));
+
+    const timelineMap: Record<string, number> = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    chartData.forEach(item => {
+      if (item.expdate && item.expdate.length >= 7) {
+        // Fast parsing of ISO date "YYYY-MM-"
+        const yStr = item.expdate.substring(0, 4);
+        const mStr = item.expdate.substring(5, 7);
+        const y = parseInt(yStr, 10);
+        const m = parseInt(mStr, 10) - 1;
+        
+        if (!isNaN(y) && !isNaN(m) && m >= 0 && m <= 11) {
+            const monthYear = `${months[m]} ${y}`;
+            timelineMap[monthYear] = (timelineMap[monthYear] || 0) + (item.totalitemquantity || 0);
+        }
+      }
+    });
+
+    const computedLineData = Object.keys(timelineMap)
+      .map(key => {
+        const [mStr, yStr] = key.split(' ');
+        const y = parseInt(yStr, 10);
+        const m = months.indexOf(mStr);
+        return {
+          name: key,
+          Quantity: timelineMap[key],
+          timestamp: new Date(y, m, 1).getTime()
+        };
+      })
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map(data => ({ name: data.name, Quantity: data.Quantity }));
+
+    return { pieData: computedPieData, barData: computedBarData, lineData: computedLineData };
+  }, [chartData]);
+
+  const pieColors = [
+    '#6366f1', '#3b82f6', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', 
+    '#ec4899', '#10b981', '#f97316', '#06b6d4', '#84cc16', '#64748b',
+    '#d946ef', '#0ea5e9', '#eab308', '#22c55e', '#f43f5e', '#a855f7'
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-12 animate-in fade-in duration-500">
       <div className="p-8">
 
-        <div className="mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-          {/* <p className="text-gray-500 mt-1 font-medium">Real-time overview of your warehouse operations</p> */}
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 font-medium cursor-pointer"
+          >
+            <option value="All">All Years</option>
+            {availableYears.map(year => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -50,8 +50,10 @@ export default function Inventory({ view = 'all' }: InventoryProps) {
             setIsLoading(true);
             setError(null);
             try {
-                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-                const response = await fetch(`${API_URL}/api/inventory`);
+                const API_URL = import.meta.env.VITE_API_URL;
+                const response = await fetch(`${API_URL}/api/inventory`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
                 if (!response.ok) {
                     throw new Error('Failed to fetch inventory data');
                 }
@@ -59,7 +61,7 @@ export default function Inventory({ view = 'all' }: InventoryProps) {
                 setItems(data);
             } catch (err) {
                 console.error('Error fetching inventory:', err);
-                setError('Failed to connect to the inventory server. Please ensure the Python API is running.');
+                setError('Failed to connect to the inventory server. Please ensure the API is running.');
             } finally {
                 setIsLoading(false);
             }
@@ -190,9 +192,10 @@ export default function Inventory({ view = 'all' }: InventoryProps) {
         if (!window.confirm('Are you sure you want to delete this product?')) return;
 
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const API_URL = import.meta.env.VITE_API_URL;
             const response = await fetch(`${API_URL}/api/inventory/${id}`, {
                 method: 'DELETE',
+                headers: { 'ngrok-skip-browser-warning': 'true' }
             });
 
             if (!response.ok) {
@@ -234,10 +237,13 @@ export default function Inventory({ view = 'all' }: InventoryProps) {
         }
 
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const API_URL = import.meta.env.VITE_API_URL;
             const response = await fetch(`${API_URL}/api/inventory/${editingItem.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
                 body: JSON.stringify(editingItem)
             });
 
